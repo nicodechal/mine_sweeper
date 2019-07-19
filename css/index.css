@@ -1,0 +1,20 @@
+@font-face {
+  font-family: 'somybmp01_7';
+  src: url(../fonts/somybmp01_7.ttf) format("truetype");
+}
+
+.title {
+  font-family: 'somybmp01_7';
+  color: #666;
+  font-size: 80px;
+  margin-bottom: 13px;
+}
+
+.red {
+  color: #f76262;
+}
+
+.container {
+  margin: 100px auto 0;
+  width: 1000px;
+}
