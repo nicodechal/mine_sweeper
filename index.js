@@ -1,14 +1,14 @@
 // useful contant
-const boxSize = 70;
-const boxGap = 4;
-const boardH = 13, boardW = 13;
-const hardRate = 0.8;
+const PIXEL_SIZE = 70;
+const PIXEL_GAP = 4;
+const BOARD_H = 13, BOARD_W = 13;
+const HARD_RATE = 0.8;
 // TODO: change
-const fontName = 'somybmp01_7';
-const lossBoom = '💣';
-const winBoom = '🏵';
-const alertWidthRate = 0.6;
-const alertHeightRate = 0.3;
+const FONT_NAME = 'somybmp01_7';
+const LOSS_BOOM = '💣';
+const WIN_BOOM = '🏵';
+const ALERT_W_RATE = 0.6;
+const ALERT_H_RATE = 0.3;
 
 const DRAW_ALERT_DEFAULT_OPTIONS = { color: "#daa592", width: 6, height: 3, fontSize: 35 };
 const DRAW_PIXEL_TEXT_DEFAULT_OPTIONS = { color: "#666", size: 16 };
@@ -20,7 +20,7 @@ const REVEALED_COLOR = 'white';
 const WIN = 0;
 const LOSS = 1;
 const RUNNING = 2;
-let state = RUNNING;
+let gameState = RUNNING;
 
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");;
@@ -29,8 +29,8 @@ const ratio = getPixelRatio(ctx);
 const board = [];
 
 // set canvas' width & height
-canvas.width = boardW * boxSize + (boardW - 1) * boxGap;
-canvas.height = boardH * boxSize + (boardH - 1) * boxGap;
+canvas.width = BOARD_W * PIXEL_SIZE + (BOARD_W - 1) * PIXEL_GAP;
+canvas.height = BOARD_H * PIXEL_SIZE + (BOARD_H - 1) * PIXEL_GAP;
 canvas.style.width = (canvas.width / ratio) + 'px';
 canvas.style.height = (canvas.height / ratio) + 'px';
 canvas.oncontextmenu = () => false;
@@ -39,17 +39,15 @@ ctx.textBaseline = "middle";
 ctx.textAlign = "center";
 
 canvas.addEventListener('click', function (e) {
-  if (!gameRunning) return false;
+  if (gameState !== RUNNING) return false;
   const [i, j] = getBoardIndecis(e.offsetX, e.offsetY);
   updateBoard(board, [i, j]);
   drawBoard();
-  checkBoard();
-  if (state !== RUNNING) {
-    gameRunning = false;
-    
-    const alertContent = state === WIN ? 'YOU WIN!!!' : "YOU FAILED!";
+  updateGameState();
+  if (gameState !== RUNNING) {
+    const alertContent = gameState === WIN ? 'YOU WIN!!!' : "YOU FAILED!";
     drawResultBoard();
-    drawAlert(alertContent);
+    drawBigRectWithText(alertContent);
     setTimeout(() => {
       clear();
       drawResultBoard();
@@ -61,100 +59,111 @@ initBoard();
 drawBoard();
 
 function initBoard() {
-  for (let i = 0; i < boardW; i++) {
+  for (let i = 0; i < BOARD_W; i++) {
     board[i] = [];
-    for (let j = 0; j < boardH; j++) {
+    for (let j = 0; j < BOARD_H; j++) {
       board[i][j] = 'E';
       // TODO: change
-      if (Math.random() > hardRate) board[i][j] = 'M';
+      if (Math.random() > HARD_RATE) board[i][j] = 'M';
     }
   }
-  gameRunning = 1;
 }
 
 function drawBoard() {
-  for (let i = 0; i < boardW; i++) {
-    for (let j = 0; j < boardH; j++) {
+  for (let i = 0; i < BOARD_W; i++) {
+    for (let j = 0; j < BOARD_H; j++) {
       if (board[i][j] === 'E' || board[i][j] === 'M') {
-        drawBox(i, j);
+        // Normally, mines are unrevealed
+        drawPixel(i, j);
       } else if (board[i][j] === 'X') {
-        drawBox(i, j, {color: MINE_COLOR});
-        drawPixelText(lossBoom, i, j, {color: 'white'});
+        drawPixel(i, j, {color: MINE_COLOR});
+        drawPixelText(LOSS_BOOM, i, j, {color: 'white'});
       } else if (board[i][j] === 'B') {
-        drawBox(i, j, {color: REVEALED_COLOR});
+        drawPixel(i, j, {color: REVEALED_COLOR});
       } else {
-        drawBox(i, j, {color: REVEALED_COLOR});
+        drawPixel(i, j, {color: REVEALED_COLOR});
         drawPixelText(board[i][j], i, j);
       }
     }
   }
 }
 
-function checkBoard() {
+function updateGameState() {
   let res = WIN;
-  for (let i = 0; i < boardW; i++) {
-    for (let j = 0; j < boardH; j++) {
-      if (board[i][j] === 'X') return state = LOSS;
+  for (let i = 0; i < BOARD_W; i++) {
+    for (let j = 0; j < BOARD_H; j++) {
+      if (board[i][j] === 'X') return gameState = LOSS;
       if (board[i][j] === 'E') res = RUNNING;
     }
   }
-  return state = res;
+  return gameState = res;
 }
 
 function drawResultBoard() {
-  const boom = state === WIN ? winBoom : lossBoom;
-  for (let i = 0; i < boardW; i++) {
-    for (let j = 0; j < boardH; j++) {
+  const boom = gameState === WIN ? WIN_BOOM : LOSS_BOOM;
+  for (let i = 0; i < BOARD_W; i++) {
+    for (let j = 0; j < BOARD_H; j++) {
       if (board[i][j] === 'E') {
-        drawBox(i, j);
+        drawPixel(i, j);
       } else if (board[i][j] === 'M' || board[i][j] === 'X') {
-        drawBox(i, j, {color: MINE_COLOR});
+        // Show mines' position if the game ends.
+        drawPixel(i, j, {color: MINE_COLOR});
         drawPixelText(boom, i, j, {color: 'white'});
       } else if (board[i][j] === 'B') {
-        drawBox(i, j, {color: REVEALED_COLOR});
+        drawPixel(i, j, {color: REVEALED_COLOR});
       } else {
-        drawBox(i, j, {color: REVEALED_COLOR});
+        drawPixel(i, j, {color: REVEALED_COLOR});
         drawPixelText(board[i][j], i, j);
       }
     }
   }
 }
 
-function drawAlert(str, i, j, options = {}) {
+function drawBigRectWithText(str, i, j, options = {}) {
   const {color, width, height, fontSize} = Object.assign(Object.create(DRAW_ALERT_DEFAULT_OPTIONS), options);
-  i = i || (boardW - width) / 2;
-  j = j || (boardH - height) / 2;
-  drawBox(i, j, {color, width, height});
+  i = i || (BOARD_W - width) / 2;
+  j = j || (BOARD_H - height) / 2;
+  drawPixel(i, j, {color, width, height});
   ctx.fillStyle = "white";
-  ctx.font = fontSize + "px " + fontName;
+  ctx.font = fontSize + "px " + FONT_NAME;
   const [x, y] = getRawCoordinate(i, j);
-  ctx.fillText(str, x + boxSize * (width / 2) + boxGap * (width / 2 - 1), y + boxSize * (height / 2) + boxGap * (height / 2 - 1));
+  ctx.fillText(str, x + PIXEL_SIZE * (width / 2) + PIXEL_GAP * (width / 2 - 1), y + PIXEL_SIZE * (height / 2) + PIXEL_GAP * (height / 2 - 1));
 }
 
 function drawPixelText(str, i, j, options = {}) {
   const {color, size} = Object.assign(Object.create(DRAW_PIXEL_TEXT_DEFAULT_OPTIONS), options);
   const [x, y] = getRawCoordinate(i, j);
   ctx.fillStyle = color;
-  ctx.font = size * ratio + "px " + fontName;
-  ctx.fillText(str, x + boxSize / 2, y + boxSize / 2);
+  ctx.font = size * ratio + "px " + FONT_NAME;
+  ctx.fillText(str, x + PIXEL_SIZE / 2, y + PIXEL_SIZE / 2);
 }
 
-function drawBox(i, j, options = {}) {
+function drawPixel(i, j, options = {}) {
   const {color, width, height} = Object.assign(Object.create(DRAW_BOX_DEFAULT_OPTIONS), options);
   const [x, y] = getRawCoordinate(i, j);
   ctx.fillStyle = color;
-  const w = boxSize * width + boxGap * (width - 1);
-  const h = boxSize * height + boxGap * (height - 1);
+  const w = PIXEL_SIZE * width + PIXEL_GAP * (width - 1);
+  const h = PIXEL_SIZE * height + PIXEL_GAP * (height - 1);
   ctx.fillRect(x, y, w, h);
 }
 
+/**
+ * Give x, y, return the pixel's position on board
+ * @param {Number} x point's x on canvas
+ * @param {Number} y point's y on canvas
+ */
 function getBoardIndecis(x, y) {
   [x, y] = [x*ratio, y*ratio];
-  return [Math.floor(x / (boxGap + boxSize)), Math.floor(y / (boxGap + boxSize))];
+  return [Math.floor(x / (PIXEL_GAP + PIXEL_SIZE)), Math.floor(y / (PIXEL_GAP + PIXEL_SIZE))];
 }
 
+/**
+ * Get pixel's coordinate on the canvas.
+ * @param {Number} i pixel's x position
+ * @param {Number} j pixel's y position
+ */
 function getRawCoordinate(i, j) {
-  return [i * (boxGap + boxSize), j * (boxGap + boxSize)]
+  return [i * (PIXEL_GAP + PIXEL_SIZE), j * (PIXEL_GAP + PIXEL_SIZE)]
 }
 
 function getPixelRatio(context) {
@@ -171,6 +180,11 @@ function clear() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
+/**
+ * Give a board and a click, update the board to a new state.
+ * @param {Array[][]} board board is a 2D array represents game board
+ * @param {Array[2]} click the pixel user clicked
+ */
 function updateBoard(board, click) {
   const [r, c] = [board.length, board[0].length];
   const dir = [
