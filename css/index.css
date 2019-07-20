@@ -7,7 +7,7 @@
   font-family: 'somybmp01_7';
   color: #666;
   font-size: 80px;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
 .red {
@@ -15,6 +15,6 @@
 }
 
 .container {
-  margin: 100px auto 0;
+  margin: 80px auto 0;
   width: 1000px;
 }
