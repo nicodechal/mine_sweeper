@@ -5,7 +5,8 @@ const boardH = 13, boardW = 13;
 const hardRate = 0.8;
 // TODO: change
 const fontName = 'somybmp01_7';
-const boom = '💣';
+const lossBoom = '💣';
+const winBoom = '🏵';
 const alertWidthRate = 0.6;
 const alertHeightRate = 0.3;
 
@@ -16,7 +17,10 @@ const MINE_COLOR = '#f76262';
 const REVEALED_COLOR = 'white';
 
 // game state
-let gameRunning = 0;
+const WIN = 0;
+const LOSS = 1;
+const RUNNING = 2;
+let state = RUNNING;
 
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");;
@@ -37,22 +41,26 @@ ctx.textAlign = "center";
 canvas.addEventListener('click', function (e) {
   if (!gameRunning) return false;
   const [i, j] = getBoardIndecis(e.offsetX, e.offsetY);
-  const state = updateBoard(board, [i, j]);
+  updateBoard(board, [i, j]);
   drawBoard();
-  if (!state) {
+  checkBoard();
+  if (state !== RUNNING) {
     gameRunning = false;
-    drawAlert("YOU FAILED!");
+    
+    const alertContent = state === WIN ? 'YOU WIN!!!' : "YOU FAILED!";
+    drawResultBoard();
+    drawAlert(alertContent);
     setTimeout(() => {
       clear();
       drawResultBoard();
-    }, 3000)
+    }, 1000)
   }
 })
 
 initBoard();
 drawBoard();
 
-function initBoard(hardRate = 0.9) {
+function initBoard() {
   for (let i = 0; i < boardW; i++) {
     board[i] = [];
     for (let j = 0; j < boardH; j++) {
@@ -71,7 +79,7 @@ function drawBoard() {
         drawBox(i, j);
       } else if (board[i][j] === 'X') {
         drawBox(i, j, {color: MINE_COLOR});
-        drawPixelText(boom, i, j, {color: 'white'});
+        drawPixelText(lossBoom, i, j, {color: 'white'});
       } else if (board[i][j] === 'B') {
         drawBox(i, j, {color: REVEALED_COLOR});
       } else {
@@ -82,7 +90,19 @@ function drawBoard() {
   }
 }
 
+function checkBoard() {
+  let res = WIN;
+  for (let i = 0; i < boardW; i++) {
+    for (let j = 0; j < boardH; j++) {
+      if (board[i][j] === 'X') return state = LOSS;
+      if (board[i][j] === 'E') res = RUNNING;
+    }
+  }
+  return state = res;
+}
+
 function drawResultBoard() {
+  const boom = state === WIN ? winBoom : lossBoom;
   for (let i = 0; i < boardW; i++) {
     for (let j = 0; j < boardH; j++) {
       if (board[i][j] === 'E') {
@@ -183,11 +203,6 @@ function updateBoard(board, click) {
       }
   }
   
-  
   if (start === 'E') fill(x, y);
-  else if (start === 'M') {
-    board[x][y] = 'X';
-    return false;
-  }
-  return true;
+  else if (start === 'M') board[x][y] = 'X';
 }
